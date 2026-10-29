@@ -1,0 +1,19 @@
+{
+  "name": "paul-studio",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Portfolio 3D (PERN) : un open-space où chaque bureau présente un projet, animé par un agent qui parle.",
+  "workspaces": ["client", "server"],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:client": "npm run dev -w client",
+    "build": "npm run build -w client",
+    "start": "npm start -w server",
+    "db:migrate": "npm run db:migrate -w server",
+    "db:seed": "npm run db:seed -w server",
+    "db:setup": "npm run db:migrate && npm run db:seed"
+  },
+  "engines": {
+    "node": ">=20.12"
+  }
+}
