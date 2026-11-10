@@ -105,6 +105,16 @@ body.panel-open #panel { transform: none; }
 .p-exp small { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
 .p-stack { list-style: none; padding: 0; margin: 14px 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .p-stack li { font: 500 12px var(--mono); padding: 5px 9px; border-radius: 8px; background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); }
+.p-books { list-style: none; padding: 0; margin: 16px 0 0; display: grid; gap: 8px; }
+.p-books.p-courses { margin: 0; }
+.p-books.p-courses i { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-style: normal; font-size: 21px; background: color-mix(in srgb, var(--c) 16%, transparent); box-shadow: none; }
+.p-books button { display: flex; gap: 12px; width: 100%; text-align: left; padding: 10px; border-radius: 14px; border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); cursor: pointer; transition: transform .15s, border-color .2s, box-shadow .2s; }
+.p-books button:hover { transform: translateX(-3px); }
+.p-books button.on { border-color: var(--c); box-shadow: 0 0 0 2px color-mix(in srgb, var(--c) 30%, transparent); }
+.p-books i { flex: none; width: 42px; height: 60px; border-radius: 3px 6px 6px 3px; background: linear-gradient(135deg, var(--b), color-mix(in srgb, var(--b) 55%, #000)); box-shadow: inset 4px 0 0 rgba(0, 0, 0, .2), 0 3px 8px -3px rgba(0, 0, 0, .5); }
+.p-books b { display: block; font-size: 14px; line-height: 1.25; }
+.p-books small { display: block; color: var(--ink-soft); font-size: 12px; margin-top: 2px; }
+.p-books em { display: block; font-style: normal; font-size: 12.5px; line-height: 1.4; color: var(--ink-soft); margin-top: 5px; }
 .p-stats { font-size: 13px; color: var(--ink-soft); }
 .p-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .btn { font: 600 14px var(--font); padding: 11px 16px; border-radius: 12px; text-decoration: none; color: var(--ink); background: var(--paper-2); border: 1px solid var(--line); cursor: pointer; }
@@ -116,6 +126,37 @@ body.panel-open #panel { transform: none; }
 .p-nav button:hover { background: var(--paper-2); }
 .p-close { position: absolute; top: 12px; right: 12px; width: 34px; height: 34px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, .35); color: #fff; cursor: pointer; z-index: 2; backdrop-filter: blur(6px); }
 .p-close.dark { background: var(--paper-2); color: var(--ink); }
+
+/* Chat de l'accueil (dans le panneau) */
+.chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.chat-head { display: flex; align-items: center; gap: 12px; padding: 14px 56px 14px 18px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--c) 9%, var(--paper)); }
+.chat-av { position: relative; width: 42px; height: 42px; flex: none; border-radius: 50%; display: grid; place-items: center; background: var(--c); color: #fff; font-weight: 700; font-size: 18px; }
+.chat-av::after { content: ""; position: absolute; right: -1px; bottom: 0; width: 12px; height: 12px; border-radius: 50%; background: #2fb67c; border: 2px solid var(--paper); }
+.chat-head b { display: block; font-size: 16px; }
+.chat-head small { display: block; color: var(--ink-soft); font-size: 12px; }
+.chat-log { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 86%; padding: 10px 13px; border-radius: 16px; font-size: 14.5px; line-height: 1.45; white-space: pre-line; overflow-wrap: anywhere; animation: msg-in .25s ease-out; }
+.msg.bot { align-self: flex-start; background: var(--paper-2); border-bottom-left-radius: 5px; }
+.msg.me { align-self: flex-end; background: var(--c); color: #fff; border-bottom-right-radius: 5px; }
+.msg dl { margin: 8px 0 2px; display: grid; gap: 5px; font-size: 13px; }
+.msg dl div { display: grid; grid-template-columns: 104px 1fr; gap: 8px; }
+.msg dt { color: var(--ink-soft); }
+.msg dd { margin: 0; font-weight: 500; }
+.msg.dots { display: flex; gap: 4px; padding: 14px; }
+.msg.dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-soft); animation: dot 1s ease-in-out infinite; }
+.msg.dots span:nth-child(2) { animation-delay: .15s; }
+.msg.dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes dot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-3px); } }
+@keyframes msg-in { from { opacity: 0; transform: translateY(6px); } }
+.chat-quick { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 16px 12px; }
+.chat-quick button { font: 600 13px var(--font); padding: 8px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--c) 45%, transparent); background: color-mix(in srgb, var(--c) 9%, var(--paper)); color: var(--ink); cursor: pointer; transition: background .2s, color .2s; }
+.chat-quick button:hover { background: var(--c); color: #fff; }
+.chat-input { display: flex; gap: 8px; padding: 12px 14px 8px; border-top: 1px solid var(--line); }
+.chat-input input { flex: 1; min-width: 0; font-size: 15px; padding: 11px 15px; border-radius: 999px; border: 1px solid var(--line); background: var(--paper-2); color: var(--ink); outline: none; }
+.chat-input input:focus { border-color: var(--c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 18%, transparent); }
+.chat-input button { width: 44px; height: 44px; flex: none; border-radius: 50%; border: 0; background: var(--c); color: #fff; font-size: 17px; cursor: pointer; }
+.chat-input input:disabled, .chat-input button:disabled { opacity: .5; cursor: default; }
+.chat-note { margin: 0; padding: 0 16px 10px; font-size: 11.5px; color: var(--ink-soft); text-align: center; }
 
 /* Toast */
 #toast { position: fixed; z-index: 8; left: 50%; bottom: 88px; transform: translate(-50%, 16px); opacity: 0; background: var(--ink); color: var(--paper); padding: 11px 16px; border-radius: 12px; font-size: 14px; transition: .35s; pointer-events: none; max-width: calc(100vw - 32px); text-align: center; }
@@ -178,6 +219,8 @@ kbd { font: 700 11px var(--mono); padding: 2px 6px; border-radius: 5px; backgrou
   #dock { bottom: 12px; }
   body.panel-open #dock { opacity: 0; pointer-events: none; left: 50%; }
   #panel { top: auto; left: 10px; right: 10px; bottom: 10px; width: auto; max-height: 46vh; transform: translateY(calc(100% + 30px)); }
+  #panel.is-chat { max-height: 62vh; }
+  .chat-note { display: none; }
   .p-visual { aspect-ratio: 21 / 9; }
   #panel h2 { font-size: 22px; }
   .b-text { font-size: 15px; }

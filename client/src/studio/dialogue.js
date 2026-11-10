@@ -3,10 +3,10 @@ import { speak, stopSpeech, tone } from './audio.js';
 
 /* Machine à écrire + voix : avance phrase par phrase, publie le texte de la bulle dans le store */
 const CHAR_DELAY = 0.028;
-const d = { st: null, i: 0, full: '', shown: 0, charT: 0, typing: false, speaking: false, waitUntil: Infinity, onEnd: null, time: 0 };
+const d = { st: null, lines: [], i: 0, full: '', shown: 0, charT: 0, typing: false, speaking: false, waitUntil: Infinity, onEnd: null, time: 0 };
 
 const sound = () => useStudio.getState().sound;
-const isLast = () => d.st && d.i === d.st.lines.length - 1;
+const isLast = () => d.st && d.i === d.lines.length - 1;
 
 function publish() {
   useStudio.setState({
@@ -17,7 +17,7 @@ function publish() {
 }
 
 function playLine() {
-  d.full = d.st.lines[d.i]; d.shown = 0; d.charT = 0; d.typing = true; d.waitUntil = Infinity;
+  d.full = d.lines[d.i]; d.shown = 0; d.charT = 0; d.typing = true; d.waitUntil = Infinity;
   if (sound() === 'voice') {
     d.speaking = true;
     speak(d.full, d.st.agent, () => { d.speaking = false; });
@@ -35,8 +35,8 @@ function finishTyping() {
 export const dialogue = {
   get station() { return d.st; },
 
-  start(st, onEnd) {
-    d.st = st; d.i = 0; d.onEnd = onEnd;
+  start(st, onEnd, lines = st.lines) {
+    d.st = st; d.lines = lines; d.i = 0; d.onEnd = onEnd;
     st.agent.waveUntil = d.time + 1.1;
     playLine();
   },

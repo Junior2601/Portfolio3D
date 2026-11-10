@@ -6,6 +6,7 @@ export default function Intro() {
   const error = useStudio((s) => s.error);
   const started = useStudio((s) => s.started);
   const owner = useStudio((s) => s.profile?.owner);
+  const host = useStudio((s) => s.profile?.reception?.agent?.name) ?? 'l’agent d’accueil';
   const name = owner ? `${owner.toLowerCase()}.studio` : 'studio';
 
   return (
@@ -18,6 +19,7 @@ export default function Intro() {
           <li><span>🖱️</span>Clique sur un agent ou sur son bureau</li>
           <li><span>🗣️</span>Il te présente son projet, à voix haute</li>
           <li><span>🧭</span>Ou laisse-toi guider bureau par bureau</li>
+          <li><span>📅</span>À l'accueil, {host} prend tes rendez-vous et tes questions</li>
         </ul>
         {status === 'error' ? (
           <>

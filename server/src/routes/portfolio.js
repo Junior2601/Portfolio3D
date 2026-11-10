@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { waitUntil } from '@vercel/functions';
 import { query } from '../db.js';
 import { refreshGithubStats } from '../services/github.js';
 
@@ -28,7 +29,8 @@ const toProject = (r) => ({
 portfolio.get('/portfolio', async (req, res, next) => {
   try {
     // Rafraîchit le cache GitHub en arrière-plan : la réponse n'attend pas
-    refreshGithubStats().catch((err) => console.warn('GitHub :', err.message));
+    // (waitUntil : sur Vercel, la fonction reste active jusqu'à la fin ; sans effet ailleurs)
+    waitUntil(refreshGithubStats().catch((err) => console.warn('GitHub :', err.message)));
     const [prof, list] = await Promise.all([
       query('SELECT data FROM profile WHERE id = 1'),
       query('SELECT * FROM projects WHERE published ORDER BY position'),

@@ -20,9 +20,9 @@ export default function Tags() {
             onClick={() => focusStation(st.idx)}
           >
             {/* Compact : numéro + projet ; le nom de l'agent apparaît au survol */}
-            {st.type === 'host'
-              ? <><i>👋</i><b>Accueil</b><span>{st.look.name}</span></>
-              : <><i>{st.num}</i><b>{st.project.short}</b><span>avec {st.look.name}</span><u>{seen ? '✓' : '💬'}</u></>}
+            {st.type === 'desk'
+              ? <><i>{st.num}</i><b>{st.project.short}</b><span>avec {st.look.name}</span><u>{seen ? '✓' : '💬'}</u></>
+              : <><i>{st.num}</i><b>{st.project.short}</b><span>{st.look.name}</span></>}
           </button>
         );
       })}

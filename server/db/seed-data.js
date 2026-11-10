@@ -21,12 +21,61 @@ export const profile = {
     whatsappLabel: '+225 05 94 30 17 54',
   },
   look: { skin: 0x8d5a3c, hair: 0x15100d, hairStyle: 'curly', shirt: 0x26233d, pants: 0x3a3f58, acc: 'none', g: null, accent: 0xff3d8b },
+  // Ce que je dis dans la salle de formation (au fond de la bibliothèque)
   lines: [
-    `Bienvenue dans mon studio ! Moi c'est ${OWNER}, et je construis des plateformes web, des assistants IA et des projets data.`,
-    'Depuis octobre 2026, je suis en stage de Data Engineer chez Progistack.',
-    'Ici, chaque bureau est un projet. Et chaque projet a son agent, prêt à te le présenter.',
-    'Tu préfères une visite guidée, ou explorer à ton rythme ?',
+    `Salut, moi c'est ${OWNER} ! Bienvenue dans ma salle de formation.`,
+    "J'ai commencé par une licence MIAGE à l'Université Polytechnique de Bingerville, en Côte d'Ivoire.",
+    "Ensuite, un master en Machine Learning et Big Data à l'Université d'État de Rostov, en Russie.",
+    "Et un stage de formation sur les LLM chez Sberbank. Aujourd'hui, je suis Data Engineer en stage chez Progistack.",
+    "Clique sur une formation pour en savoir plus. Et pour me rencontrer, Bienvenue prend mes rendez-vous à l'accueil !",
   ],
+  // Mes formations : affichées sur l'écran de la salle de formation. `about` = ce que je dis quand on en choisit une.
+  // period (facultatif) : par exemple '2019 – 2022'.
+  education: [
+    {
+      title: 'Licence MIAGE', school: 'Université Polytechnique de Bingerville', place: "Côte d'Ivoire", icon: '🎓', period: '',
+      about: "Ma base : l'informatique appliquée à la gestion des entreprises. Développement, bases de données et systèmes d'information.",
+    },
+    {
+      title: 'Master Machine Learning et Big Data', school: "Université d'État de Rostov", place: 'Russie', icon: '🎓', period: '',
+      about: "Là, je me suis spécialisé en apprentissage automatique et en traitement de grands volumes de données.",
+    },
+    {
+      title: 'Stage de formation LLM', school: 'Sberbank', place: 'Russie', icon: '🧠', period: '',
+      about: 'Un stage de formation consacré aux grands modèles de langage, les LLM, au sein de la plus grande banque de Russie.',
+    },
+  ],
+  // L'agent Bienvenue, à l'accueil : il parle à l'arrivée, puis prend les rendez-vous et les questions dans le chat.
+  // Chaque demande est enregistrée en base et envoyée par e-mail (voir RESEND_API_KEY et CONTACT_TO dans .env).
+  reception: {
+    agent: { name: 'Bienvenue', role: "Agent d'accueil", shirt: 0xd6457a, pants: 0x2d2a44, skin: 0x6b4226, hair: 0x120c0a, hairStyle: 'long', acc: 'headset', g: 'f', blip: 600 },
+    lines: [
+      "Bienvenue ! Et c'est aussi mon prénom : moi, c'est Bienvenue, l'agent d'accueil du studio.",
+      `Derrière moi, la bibliothèque et la salle de formation de ${OWNER}. À côté, l'espace cowork : chaque bureau y présente un de ses projets.`,
+      `Tu veux un rendez-vous avec ${OWNER}, ou tu as une question ? Écris-moi dans le chat : je lui transmets tout par e-mail.`,
+      'Sinon, je te propose une visite guidée, ou tu explores à ton rythme ?',
+    ],
+  },
+  // La bibliothèque. ⚠️ Liste de départ à remplacer par tes vraies recommandations.
+  // Chaque livre apparaît sur l'étagère (color = sa couverture) et Zoé lit `why` à voix haute.
+  library: {
+    tagline: 'Les livres que je recommande.',
+    description: 'Choisis un livre : il sort de l’étagère et Zoé te dit pourquoi il est là.',
+    agent: { name: 'Zoé', role: 'Bibliothécaire', shirt: 0x6a7bd9, pants: 0x2d2a44, skin: 0xa86b45, hair: 0x2a1a12, hairStyle: 'bun', acc: 'glasses', g: 'f', blip: 470 },
+    lines: [
+      'Bienvenue à la bibliothèque ! Moi c’est Zoé.',
+      `Ici, je garde les livres que ${OWNER} recommande.`,
+      'Choisis-en un dans la liste, ou clique directement sur l’étagère. Il viendra jusqu’à toi !',
+    ],
+    books: [
+      { title: 'Designing Data-Intensive Applications', author: 'Martin Kleppmann', color: 0x8b4a5e, why: 'La référence pour comprendre les bases de données, la réplication et les systèmes distribués.' },
+      { title: 'Fundamentals of Data Engineering', author: 'Joe Reis et Matt Housley', color: 0x2f7f8a, why: 'Une vue d’ensemble du cycle de vie de la donnée, de l’ingestion jusqu’à son utilisation.' },
+      { title: 'AI Engineering', author: 'Chip Huyen', color: 0x6a5ac4, why: 'Comment construire de vraies applications sur des modèles de langage : RAG, agents et évaluation.' },
+      { title: 'Python for Data Analysis', author: 'Wes McKinney', color: 0x2f8f5b, why: 'pandas expliqué par son créateur, avec des manipulations de données concrètes.' },
+      { title: 'The Pragmatic Programmer', author: 'Andrew Hunt et David Thomas', color: 0xc47a2c, why: 'Des habitudes simples pour mieux écrire et maintenir du code, projet après projet.' },
+      { title: 'The Lean Startup', author: 'Eric Ries', color: 0xc2453d, why: 'Tester une idée vite et à petit prix avant d’y investir, en apprenant de ses utilisateurs.' },
+    ],
+  },
 };
 
 const LOOKS = {

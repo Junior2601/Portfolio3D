@@ -3,7 +3,7 @@ import { useStudio } from './store.js';
 import { fetchPortfolio } from './api.js';
 import { Engine } from './studio/Engine.js';
 import {
-  advance, attachEngine, closeContact, enter, focusStation, goOverview, startTour, step, stopTour, toggleNight,
+  advance, attachEngine, closeContact, enter, focusStation, goOverview, pickBook, pickCourse, startTour, step, stopTour, toggleNight,
 } from './controller.js';
 import Intro from './components/Intro.jsx';
 import TopBar from './components/TopBar.jsx';
@@ -32,7 +32,12 @@ export default function App() {
 
   // Construit le studio une seule fois, à partir des données de l'API
   useEffect(() => {
-    const engine = new Engine(canvasRef.current, { onPick: (i) => focusStation(i) });
+    const onPick = (i, { book, course }) => {
+      if (book !== undefined) pickBook(book);
+      else if (course !== undefined) pickCourse(course);
+      else focusStation(i);
+    };
+    const engine = new Engine(canvasRef.current, { onPick });
     attachEngine(engine);
     (async () => {
       try {

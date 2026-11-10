@@ -1,0 +1,9 @@
+# Jamais envoyé à Vercel (utile si tu déploies avec la CLI depuis ton PC)
+.env
+.env.*
+!.env.example
+client/dist
+prototype
+Dockerfile
+docker-compose.yml
+.dockerignore

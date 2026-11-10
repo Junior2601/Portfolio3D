@@ -1,16 +1,19 @@
 import { useEffect, useRef } from 'react';
 import { useStudio } from '../store.js';
 import { advance, focusStation, goOverview, openContact, registerBubble, startTour, toast } from '../controller.js';
+import { bookMeeting } from '../reception.js';
 import { uiColor } from '../studio/utils.js';
 
 function choicesFor(st, count) {
   if (st.type === 'host') {
     return [
       ['▶ Visite guidée', startTour],
+      ['📅 Prendre rendez-vous', bookMeeting],
       ['Explorer librement', () => { goOverview(); toast('Clique sur un agent ou un bureau pour découvrir un projet 👀'); }],
     ];
   }
   const list = [];
+  if (st.project.meeting) list.push(['📅 Prendre rendez-vous', bookMeeting]);
   if (st.project.contact) list.push(['✉️ Me contacter', openContact]);
   list.push(st.idx === count - 1 ? ["↺ Retour à l'accueil", () => focusStation(0)] : ['Bureau suivant →', () => focusStation(st.idx + 1)]);
   list.push(["Vue d'ensemble", goOverview]);

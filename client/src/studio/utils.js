@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 
 export const { clamp, damp, lerp } = THREE.MathUtils;
+export const angleTo = (from, to) => THREE.MathUtils.euclideanModulo(to - from + Math.PI, Math.PI * 2) - Math.PI;
 export const hex = (n) => '#' + new THREE.Color(n).getHexString();
 export const uiColor = (look) => hex(look.accent ?? look.shirt);
 export const hexA = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; };
@@ -16,10 +17,18 @@ export const srand = () => ((seed = (seed * 16807) % 2147483647) - 1) / 21474836
 export const reseed = (s) => { seed = s; };
 
 const mats = new Map();
-export function mat(color, rough = 0.82) {
-  const key = color + '|' + rough;
-  if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0, flatShading: true }));
+export function mat(color, rough = 0.82, flatShading = true) {
+  const key = color + '|' + rough + '|' + flatShading;
+  if (!mats.has(key)) mats.set(key, new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0, flatShading }));
   return mats.get(key);
+}
+/* Surface lisse (personnages, chaises) : les facettes sont réservées au décor */
+export const soft = (color, rough = 0.7) => mat(color, rough, false);
+/* Volume de révolution : profil [[rayon, hauteur], ...] listé de bas en haut, adouci par une courbe */
+export function lathe(profile, seg = 14) {
+  const pts = new THREE.SplineCurve(profile.map(([r, y]) => new THREE.Vector2(r, y))).getPoints((profile.length - 1) * 4);
+  for (const p of pts) p.x = Math.max(p.x, 0);
+  return new THREE.LatheGeometry(pts, seg);
 }
 export function add(geo, material, parent, x = 0, y = 0, z = 0, shadows = true) {
   const m = new THREE.Mesh(geo, typeof material === 'number' ? mat(material) : material);
@@ -34,6 +43,17 @@ export const SP = (r, ws, hs, c, p, x, y, z, s) => add(new THREE.SphereGeometry(
 
 export function makeCanvas(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
 export function texFrom(canvas) { const t = new THREE.CanvasTexture(canvas); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t; }
+/* Tache douce : poussière, vapeur */
+let softTex = null;
+export function softDot() {
+  if (!softTex) {
+    const [c, g] = makeCanvas(64, 64);
+    const grd = g.createRadialGradient(32, 32, 0, 32, 32, 32); grd.addColorStop(0, 'rgba(255,255,255,1)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = grd; g.fillRect(0, 0, 64, 64);
+    softTex = texFrom(c);
+  }
+  return softTex;
+}
 export function rr(g, x, y, w, h, r) { g.beginPath(); g.roundRect(x, y, w, h, r); }
 export function fit(g, text, maxW) {
   if (g.measureText(text).width <= maxW) return text;

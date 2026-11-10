@@ -6,9 +6,11 @@ export const useStudio = create(() => ({
   status: 'loading', // loading | ready | error
   error: '',
   profile: null,
-  stations: [], // [accueil, ...bureaux] : { idx, type, num, project, look }
+  stations: [], // [accueil, ...bureaux, bibliothèque, salle de formation] : { idx, type, num, project, look }
   started: false,
   focus: -1,
+  book: -1, // livre sorti de l'étagère
+  course: -1, // formation mise en avant dans la salle de formation
   visited: new Set(),
   night: false,
   sound: typeof window !== 'undefined' && 'speechSynthesis' in window ? 'voice' : 'blips',

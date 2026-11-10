@@ -11,7 +11,7 @@ try {
 export const config = {
   port: Number(process.env.PORT) || 4000,
   isProd: process.env.NODE_ENV === 'production',
-  databaseUrl: process.env.DATABASE_URL,
+  databaseUrl: process.env.DATABASE_URL || process.env.POSTGRES_URL, // POSTGRES_URL : nom donné par certaines intégrations Vercel
   databaseSsl: process.env.DATABASE_SSL === 'true',
   githubToken: process.env.GITHUB_TOKEN || '',
   resendApiKey: process.env.RESEND_API_KEY || '',

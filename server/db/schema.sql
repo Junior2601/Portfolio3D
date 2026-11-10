@@ -45,3 +45,7 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   user_agent text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+-- Demandes laissées à l'agent d'accueil : message (formulaire), rdv (rendez-vous) ou info (question)
+ALTER TABLE contact_messages ADD COLUMN IF NOT EXISTS kind text NOT NULL DEFAULT 'message';
+ALTER TABLE contact_messages ADD COLUMN IF NOT EXISTS details jsonb;  -- rendez-vous : { when, mode, phone }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildWorld } from './world.js';
+import { Life } from './life.js';
 import { drawScreen } from './screens.js';
 import { dialogue } from './dialogue.js';
 import { tone } from './audio.js';
@@ -42,18 +43,20 @@ export class Engine {
     this.sun.position.set(12, 22, 10);
     this.sun.castShadow = true;
     this.sun.shadow.mapSize.set(2048, 2048);
-    Object.assign(this.sun.shadow.camera, { left: -22, right: 22, top: 22, bottom: -22, near: 1, far: 70 });
+    Object.assign(this.sun.shadow.camera, { left: -24, right: 24, top: 24, bottom: -24, near: 1, far: 75 });
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.03;
     scene.add(this.hemi, this.sun);
 
     this.raycaster = new THREE.Raycaster(); this.ndc = new THREE.Vector2();
     this.clock = new THREE.Clock();
+    this.life = new Life();
     this.bindPointer();
   }
 
   build(profile, projects) {
     this.stations = buildWorld(profile, projects);
+    this.life.init(this.stations);
     return this.stations;
   }
 
@@ -114,6 +117,7 @@ export class Engine {
   focus(i) {
     this.focusIdx = i;
     for (const s of this.stations) s.agent.focused = s.idx === i;
+    this.life.recall(this.stations[i].agent);
     this.flyTo(this.focusView(this.stations[i]), 1.5);
   }
 
@@ -126,6 +130,14 @@ export class Engine {
   setNight(on, instant = false) {
     this.night = on;
     if (instant) { this.nightK = on ? 1 : 0; this.applyNight(this.nightK); }
+  }
+
+  selectBook(i) {
+    world.library?.select(i);
+  }
+
+  selectCourse(i) {
+    world.training?.select(i);
   }
 
   snapshot(i) {
@@ -145,15 +157,17 @@ export class Engine {
   pick(e) {
     this.ndc.set((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
     this.raycaster.setFromCamera(this.ndc, this.camera);
-    const hit = this.raycaster.intersectObjects(world.hit, false)[0];
-    return hit ? hit.object.userData.station : -1;
+    const hits = this.raycaster.intersectObjects(world.hit, false), first = hits[0]?.object.userData;
+    if (!first) return {};
+    // La zone cliquable d'une station recouvre ses objets (livres, formations à l'écran) : un objet visé passe avant elle
+    const item = hits.find(({ object: { userData: u } }) => u.station === first.station && (u.book ?? u.course) !== undefined);
+    return item?.object.userData ?? first;
   }
 
   setHover(i) {
     if (i === this.hover) return;
     if (this.hover >= 0) this.stations[this.hover].agent.hovered = false;
     this.hover = i;
-    this.canvas.style.cursor = i >= 0 ? 'pointer' : '';
     if (i >= 0) {
       const a = this.stations[i].agent;
       a.hovered = true;
@@ -169,19 +183,30 @@ export class Engine {
       const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
       if (moved > 6) return; // c'était un glisser (rotation de la caméra), pas un clic
-      const i = this.pick(e);
-      if (i >= 0) this.onPick(i);
+      const hit = this.pick(e);
+      if (hit.pet) hit.pet();
+      else if (hit.station >= 0) this.onPick(hit.station, hit);
     });
-    this.canvas.addEventListener('pointermove', (e) => { if (this.interactive && e.pointerType !== 'touch') this.setHover(this.pick(e)); });
+    this.canvas.addEventListener('pointermove', (e) => {
+      if (!this.interactive || e.pointerType === 'touch') return;
+      const { station = -1, pet } = this.pick(e);
+      this.setHover(station);
+      this.canvas.style.cursor = station >= 0 || pet ? 'pointer' : '';
+    });
   }
 
   /* ---------- Étiquettes et bulle (éléments React positionnés à chaque image) ---------- */
   setTagEl(i, el) { this.tagEls[i] = el; }
   setBubbleEl(el) { this.bubbleEl = el; }
 
+  toScreen(v) {
+    v.project(this.camera);
+    return { x: (v.x * 0.5 + 0.5) * innerWidth, y: (-v.y * 0.5 + 0.5) * innerHeight, behind: v.z > 1 };
+  }
+
   project(obj, dy) {
-    obj.getWorldPosition(_p); _p.y += dy; _p.project(this.camera);
-    return { x: (_p.x * 0.5 + 0.5) * innerWidth, y: (-_p.y * 0.5 + 0.5) * innerHeight, behind: _p.z > 1 };
+    obj.getWorldPosition(_p); _p.y += dy;
+    return this.toScreen(_p);
   }
 
   positionOverlays() {
@@ -189,7 +214,7 @@ export class Engine {
       for (const st of this.stations) {
         const el = this.tagEls[st.idx];
         if (!el) continue;
-        const s = this.project(st.agent.head, 0.75);
+        const s = this.toScreen(_p.copy(st.tag));
         el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
         el.style.visibility = s.behind ? 'hidden' : '';
       }
@@ -231,6 +256,7 @@ export class Engine {
     }
     this.nightK = damp(this.nightK, this.night ? 1 : 0, 2.5, dt);
     this.applyNight(this.nightK);
+    this.life.update(t, dt);
     for (const st of this.stations) {
       st.agent.update(t, dt, this.camera.position);
       if (st.spot) st.spot.material.opacity = damp(st.spot.material.opacity, st.idx === this.focusIdx ? 0.3 : st.idx === this.hover ? 0.42 : 0.12, 8, dt);

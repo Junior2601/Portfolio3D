@@ -29,21 +29,27 @@ export function enter() {
   setTimeout(() => { if (S().focus < 0) focusStation(0); }, reduceMotion ? 100 : 2900);
 }
 
-export function focusStation(i, { tour = false } = {}) {
+/* Range le livre sorti et éteint la formation mise en avant à l'écran */
+function putBack() {
+  if (S().book >= 0) { set({ book: -1 }); engine.selectBook(-1); }
+  if (S().course >= 0) { set({ course: -1 }); engine.selectCourse(-1); }
+}
+
+export function focusStation(i, { tour = false, lines } = {}) {
   const st = engine?.stations[i];
   if (!st) return;
   if (!tour) stopTour();
   if (S().focus === i && dialogue.station === st) { dialogue.advance(); return; }
+  if (!lines) putBack();
   dialogue.stop();
   clearTimeout(talkTimer);
   set({ focus: i });
   engine.focus(i);
   talkTimer = setTimeout(() => {
-    dialogue.start(st, () => { if (S().tour) tourNext(); });
+    dialogue.start(st, () => { if (S().tour) tourNext(); }, lines);
     const visited = new Set(S().visited).add(i);
     set({ visited });
-    const desks = engine.stations.length - 1;
-    if (!allSeenShown && [...visited].filter((v) => v > 0).length === desks) {
+    if (!allSeenShown && engine.stations.every((s) => s.type !== 'desk' || visited.has(s.idx))) {
       allSeenShown = true;
       setTimeout(() => toast('🎉 Tu as visité tous les bureaux ! Merci pour ta visite.', 5000), 2500);
     }
@@ -55,8 +61,51 @@ export function goOverview() {
   stopTour();
   clearTimeout(talkTimer);
   dialogue.stop();
+  putBack();
   set({ focus: -1 });
   engine?.overview();
+}
+
+/* Sort un livre de l'étagère, et la bibliothécaire explique pourquoi il est recommandé */
+export function pickBook(b) {
+  const st = engine.stations.find((s) => s.type === 'library');
+  const again = S().book === b;
+  putBack(); // un seul objet en avant à la fois
+  if (again) { dialogue.stop(); return; }
+  const { title, author, why } = st.project.books[b];
+  set({ book: b });
+  engine.selectBook(b);
+  present(st, [`« ${title} », de ${author}. ${why}`]);
+}
+
+/* Met une formation en avant sur l'écran de la salle de formation, et Paul la présente */
+export function pickCourse(c) {
+  const st = engine.stations.find((s) => s.type === 'training');
+  const again = S().course === c;
+  putBack(); // un seul objet en avant à la fois
+  if (again) { dialogue.stop(); return; }
+  const { title, school, place, about } = st.project.courses[c];
+  set({ course: c });
+  engine.selectCourse(c);
+  present(st, [`${title}, ${school}${place ? ` (${place})` : ''}. ${about || ''}`.trim()]);
+}
+
+/* L'agent de la station dit ces phrases, en y allant d'abord si besoin */
+function present(st, lines) {
+  if (S().focus !== st.idx) { focusStation(st.idx, { lines }); return; }
+  stopTour();
+  clearTimeout(talkTimer);
+  dialogue.stop();
+  dialogue.start(st, null, lines);
+  pop();
+}
+
+/* L'agent d'accueil « parle » quand il répond dans le chat */
+export function nudgeHost(sec = 1.6) {
+  const a = engine?.stations[0]?.agent;
+  if (!a) return;
+  a.talkUntil = engine.time + sec;
+  a.say('💬', sec);
 }
 
 export function step(d) {

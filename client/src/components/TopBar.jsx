@@ -6,11 +6,12 @@ const SOUND = { voice: ['🗣️', 'Voix'], blips: ['🎵', 'Bips'], mute: ['�
 export default function TopBar() {
   const profile = useStudio((s) => s.profile);
   const visited = useStudio((s) => s.visited);
-  const desks = useStudio((s) => s.stations.length - 1);
+  const stations = useStudio((s) => s.stations);
   const night = useStudio((s) => s.night);
   const tour = useStudio((s) => s.tour);
   const sound = useStudio((s) => s.sound);
-  const seen = [...visited].filter((i) => i > 0).length;
+  const desks = stations.filter((s) => s.type === 'desk');
+  const seen = desks.filter((s) => visited.has(s.idx)).length;
 
   return (
     <>
@@ -18,7 +19,7 @@ export default function TopBar() {
         <div className="logo">{profile.owner[0].toUpperCase()}</div>
         <div><b>{profile.owner.toLowerCase()}.studio</b><small>{profile.role}</small></div>
       </header>
-      <div className="ui glass" id="progress">🧭 <b>{seen}</b>/{desks} bureaux visités</div>
+      <div className="ui glass" id="progress">🧭 <b>{seen}</b>/{desks.length} bureaux visités</div>
       <nav className="ui toolbar" aria-label="Contrôles">
         <button className="tbtn glass" onClick={cycleSound} title="Son des agents"><b>{SOUND[sound][0]}</b><span>{SOUND[sound][1]}</span></button>
         <button className="tbtn glass" onClick={toggleNight} title="Jour / nuit (N)">{night ? <><b>☀️</b><span>Jour</span></> : <><b>🌙</b><span>Nuit</span></>}</button>
