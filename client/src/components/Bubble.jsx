@@ -4,19 +4,23 @@ import { advance, focusStation, goOverview, openContact, registerBubble, startTo
 import { bookMeeting } from '../reception.js';
 import { uiColor } from '../studio/utils.js';
 
-function choicesFor(st, count) {
+/* fp : à la première personne, « quitter » une station laisse le visiteur sur place, libre de marcher */
+function choicesFor(st, count, fp) {
   if (st.type === 'host') {
     return [
       ['▶ Visite guidée', startTour],
       ['📅 Prendre rendez-vous', bookMeeting],
-      ['Explorer librement', () => { goOverview(); toast('Clique sur un agent ou un bureau pour découvrir un projet 👀'); }],
+      ['Explorer librement', () => {
+        goOverview();
+        toast(fp ? 'Promène-toi : clique au sol pour marcher, ou sur un agent pour découvrir son projet 👀' : 'Clique sur un agent ou un bureau pour découvrir un projet 👀');
+      }],
     ];
   }
   const list = [];
   if (st.project.meeting) list.push(['📅 Prendre rendez-vous', bookMeeting]);
   if (st.project.contact) list.push(['✉️ Me contacter', openContact]);
   list.push(st.idx === count - 1 ? ["↺ Retour à l'accueil", () => focusStation(0)] : ['Bureau suivant →', () => focusStation(st.idx + 1)]);
-  list.push(["Vue d'ensemble", goOverview]);
+  list.push([fp ? 'Continuer à pied' : "Vue d'ensemble", goOverview]);
   return list;
 }
 
@@ -25,6 +29,7 @@ export default function Bubble() {
   const ref = useRef(null);
   const bubble = useStudio((s) => s.bubble);
   const stations = useStudio((s) => s.stations);
+  const fp = useStudio((s) => s.view === 'fp');
   const st = stations[bubble.idx];
 
   useEffect(() => { registerBubble(ref.current); }, []);
@@ -44,7 +49,7 @@ export default function Bubble() {
       <p className="b-text">{bubble.text}</p>
       {st && bubble.last && !bubble.typing && (
         <div className="b-choices">
-          {choicesFor(st, stations.length).map(([label, fn]) => (
+          {choicesFor(st, stations.length, fp).map(([label, fn]) => (
             <button key={label} onClick={(e) => { e.stopPropagation(); fn(); }}>{label}</button>
           ))}
         </div>

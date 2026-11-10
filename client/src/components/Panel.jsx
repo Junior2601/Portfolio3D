@@ -44,21 +44,28 @@ function Books({ books }) {
   );
 }
 
-/* Formations : en choisir une la met en avant sur l'écran de la salle, et Paul la présente */
-function Courses({ courses }) {
+/* Formations : en choisir une la met en avant sur l'écran de la salle, et Paul la présente.
+   items = [[formation, index dans la liste complète], ...] ; une simulation choisie déplie ses tâches */
+function Courses({ items }) {
   const active = useStudio((s) => s.course);
   return (
     <ul className="p-books p-courses">
-      {courses.map((c, i) => (
+      {items.map(([c, i]) => (
         <li key={c.title}>
-          <button className={i === active ? 'on' : ''} aria-pressed={i === active} onClick={() => pickCourse(i)}>
+          <button className={i === active ? 'on' : ''} aria-pressed={i === active} aria-expanded={c.tasks ? i === active : undefined} onClick={() => pickCourse(i)}>
             <i>{c.icon || '🎓'}</i>
             <span>
               <b>{c.title}</b>
-              <small>{[c.school, c.place, c.period].filter(Boolean).join(' · ')}</small>
+              <small>{[c.sub, c.period].filter(Boolean).join(' · ')}</small>
               {c.about && <em>{c.about}</em>}
             </span>
           </button>
+          {c.tasks && i === active && (
+            <div className="p-detail">
+              <ol className="p-tasks">{c.tasks.map((t) => <li key={t}>{t}</li>)}</ol>
+              {c.skills?.length > 0 && <p className="p-skills">{c.skills.map((k) => <u key={k}>{k}</u>)}</p>}
+            </div>
+          )}
         </li>
       ))}
     </ul>
@@ -86,6 +93,8 @@ export default function Panel() {
   const p = st.project, about = st.type === 'training', chat = st.type === 'host';
   const dates = [p.stars > 0 && `⭐ ${p.stars} étoile${p.stars > 1 ? 's' : ''}`, p.updated && `Mis à jour le ${fmtDate(p.updated)}`].filter(Boolean);
   const desks = stations.filter((s) => s.type === 'desk').length;
+  const courses = (p.courses ?? []).map((c, i) => [c, i]);
+  const edu = courses.filter(([c]) => c.group !== 'sim'), sims = courses.filter(([c]) => c.group === 'sim');
 
   return (
     <aside id="panel" className={chat ? 'is-chat' : ''} aria-label={chat ? 'Chat de l’accueil' : 'Fiche projet'} style={{ '--c': uiColor(st.look) }}>
@@ -102,10 +111,17 @@ export default function Panel() {
             <p className="p-tagline">{p.tagline}</p>
             {p.status && <span className="p-status"><i />{p.status}</span>}
             <p className="p-desc">{p.description}</p>
-            {p.courses?.length > 0 && (
+            {edu.length > 0 && (
               <>
-                <h3 className="p-sub">Formations</h3>
-                <Courses courses={p.courses} />
+                <h3 className="p-sub">Diplômes</h3>
+                <Courses items={edu} />
+              </>
+            )}
+            {sims.length > 0 && (
+              <>
+                <h3 className="p-sub">Simulations de poste · Forage</h3>
+                <p className="p-note">Des mises en situation conçues par les entreprises sur Forage. Choisis-en une pour voir les tâches.</p>
+                <Courses items={sims} />
               </>
             )}
             {p.experience?.length > 0 && (

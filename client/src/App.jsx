@@ -3,7 +3,8 @@ import { useStudio } from './store.js';
 import { fetchPortfolio } from './api.js';
 import { Engine } from './studio/Engine.js';
 import {
-  advance, attachEngine, closeContact, enter, focusStation, goOverview, pickBook, pickCourse, startTour, step, stopTour, toggleNight,
+  advance, attachEngine, canMove, closeContact, enter, focusStation, goOverview, onManualMove, pickBook, pickCourse, showCourses,
+  startTour, step, stopTour, toggleNight, toggleView, walkTo,
 } from './controller.js';
 import Intro from './components/Intro.jsx';
 import TopBar from './components/TopBar.jsx';
@@ -32,12 +33,14 @@ export default function App() {
 
   // Construit le studio une seule fois, à partir des données de l'API
   useEffect(() => {
-    const onPick = (i, { book, course }) => {
+    const onPick = (i, { book, course, tab }) => {
       if (book !== undefined) pickBook(book);
       else if (course !== undefined) pickCourse(course);
+      else if (tab !== undefined) showCourses(tab);
       else focusStation(i);
     };
-    const engine = new Engine(canvasRef.current, { onPick });
+    const engine = new Engine(canvasRef.current, { onPick, onWalk: walkTo, canMove, onManual: onManualMove });
+    engine.setView(useStudio.getState().view);
     attachEngine(engine);
     (async () => {
       try {
@@ -78,12 +81,14 @@ export default function App() {
       if (s.contactOpen) { if (e.key === 'Escape') closeContact(); return; }
       if (!s.started) { if (e.key === 'Enter') enter(); return; }
       if (e.target.closest('input, textarea')) return;
-      if (e.key === 'ArrowRight') step(1);
-      else if (e.key === 'ArrowLeft') step(-1);
+      const fp = s.view === 'fp'; // à la première personne, les flèches servent à marcher (firstperson.js)
+      if (e.key === 'ArrowRight' && !fp) step(1);
+      else if (e.key === 'ArrowLeft' && !fp) step(-1);
       else if (e.key === 'Escape') goOverview();
       else if ((e.key === ' ' || e.key === 'Enter') && !e.target.closest('button, a')) { e.preventDefault(); advance(); }
       else if (e.key.toLowerCase() === 't') (s.tour ? stopTour() : startTour());
       else if (e.key.toLowerCase() === 'n') toggleNight();
+      else if (e.key.toLowerCase() === 'v') toggleView();
     };
     addEventListener('keydown', onKey);
     return () => removeEventListener('keydown', onKey);

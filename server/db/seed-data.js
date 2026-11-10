@@ -27,6 +27,7 @@ export const profile = {
     "J'ai commencé par une licence MIAGE à l'Université Polytechnique de Bingerville, en Côte d'Ivoire.",
     "Ensuite, un master en Machine Learning et Big Data à l'Université d'État de Rostov, en Russie.",
     "Et un stage de formation sur les LLM chez Sberbank. Aujourd'hui, je suis Data Engineer en stage chez Progistack.",
+    "Je m'entraîne aussi sur Forage, avec des simulations de poste proposées par British Airways, Deloitte, Tata et BCG X. Elles sont dans l'onglet « Forage » de l'écran.",
     "Clique sur une formation pour en savoir plus. Et pour me rencontrer, Bienvenue prend mes rendez-vous à l'accueil !",
   ],
   // Mes formations : affichées sur l'écran de la salle de formation. `about` = ce que je dis quand on en choisit une.
@@ -45,6 +46,48 @@ export const profile = {
       about: 'Un stage de formation consacré aux grands modèles de langage, les LLM, au sein de la plus grande banque de Russie.',
     },
   ],
+  // Simulations de poste suivies sur Forage (theforage.com) : onglet « Forage » de l'écran de la salle de formation.
+  // Ce ne sont pas des expériences professionnelles : elles restent présentées comme des simulations.
+  simulations: [
+    {
+      company: 'British Airways', title: 'Engineering', icon: '✈️', duration: '2 à 3 h',
+      about: "Dans la peau d'un ingénieur maintenance : diagnostiquer la panne d'un avion, puis planifier les pièces et la maintenance de la flotte.",
+      tasks: [
+        "Enquête sur un défaut : analyser les journaux de pannes, les manuels constructeur (OEM) et la liste minimale d'équipements (MEL), puis rédiger une demande de travaux (WREQ) avec la réparation, les risques et la sécurité.",
+        'Prévision des besoins : analyser plannings de maintenance et stocks dans Excel, repérer les ruptures de pièces et bâtir un planning avec un plan de secours.',
+      ],
+      skills: ['Interprétation de données', 'Décision guidée par la donnée', 'Risque opérationnel', 'Supply chain', 'Excel', 'Rédaction de rapport'],
+    },
+    {
+      company: 'Deloitte Australia', title: 'Data Analytics', icon: '📊', duration: '1 à 2 h',
+      about: "Analyse de données et investigation numérique dans un cabinet de conseil : un tableau de bord pour un client, puis une enquête sur des salaires.",
+      tasks: [
+        "Analyse de données : explorer les données de télémétrie d'un client et construire un tableau de bord dans Tableau.",
+        'Forensic technology : classer des données dans Excel pour aider une enquête sur des inégalités de salaires.',
+      ],
+      skills: ['Analyse de données', 'Data visualisation', 'Tableau', 'Excel', 'Conception de bases de données'],
+    },
+    {
+      company: 'Tata', title: 'Data Visualisation', icon: '📈', duration: '3 à 4 h',
+      about: 'Transformer des données en décisions : poser les bonnes questions, choisir les bons visuels et présenter les résultats au CEO et au CMO.',
+      tasks: [
+        'Cadrer le besoin : écrire les questions qui comptent pour le CEO et le CMO.',
+        'Choisir le visuel le plus simple pour expliquer chaque résultat.',
+        'Créer les visuels dans Tableau ou Power BI.',
+        'Présenter les analyses aux dirigeants.',
+      ],
+      skills: ['Data visualisation', 'Tableau', 'Power BI', 'Préparation de données', 'Data storytelling', 'Communication'],
+    },
+    {
+      company: 'BCG X', title: 'GenAI', icon: '🤖', duration: '3 à 4 h',
+      about: "Junior data scientist dans l'équipe GenAI de BCG : un chatbot qui répond aux questions financières à partir des rapports annuels d'entreprises.",
+      tasks: [
+        'Extraire et analyser avec Python les chiffres clés de rapports financiers annuels (10-K).',
+        'Développer un chatbot IA qui répond aux questions financières à partir de ces données.',
+      ],
+      skills: ['Python', 'IA générative', 'NLP', 'Analyse financière', 'Data science', 'Excel'],
+    },
+  ],
   // L'agent Bienvenue, à l'accueil : il parle à l'arrivée, puis prend les rendez-vous et les questions dans le chat.
   // Chaque demande est enregistrée en base et envoyée par e-mail (voir RESEND_API_KEY et CONTACT_TO dans .env).
   reception: {
@@ -52,7 +95,7 @@ export const profile = {
     lines: [
       "Bienvenue ! Et c'est aussi mon prénom : moi, c'est Bienvenue, l'agent d'accueil du studio.",
       `Derrière moi, la bibliothèque et la salle de formation de ${OWNER}. À côté, l'espace cowork : chaque bureau y présente un de ses projets.`,
-      `Tu veux un rendez-vous avec ${OWNER}, ou tu as une question ? Écris-moi dans le chat : je lui transmets tout par e-mail.`,
+      `Une question sur ${OWNER} ? Pose-la-moi dans le chat, je réponds tout de suite. Je prends aussi ses rendez-vous.`,
       'Sinon, je te propose une visite guidée, ou tu explores à ton rythme ?',
     ],
   },

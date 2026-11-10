@@ -25,9 +25,39 @@ export function enter() {
   if (S().status !== 'ready' || S().started) return;
   unlockAudio();
   set({ started: true });
-  engine.intro();
-  setTimeout(() => { if (S().focus < 0) focusStation(0); }, reduceMotion ? 100 : 2900);
+  const fp = S().view === 'fp';
+  engine.intro(S().view);
+  setTimeout(() => { if (S().focus < 0) focusStation(0); }, reduceMotion ? 100 : fp ? 3100 : 2900);
+  if (fp) setTimeout(() => toast(hint(), 7000), reduceMotion ? 300 : 3400);
 }
+
+/* Mode d'emploi de la première personne, selon l'appareil */
+const hint = () => (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches
+  ? '👆 Glisse pour regarder autour de toi · touche le sol pour y aller'
+  : '🖱️ Glisse pour regarder autour de toi · clique au sol pour marcher · ZQSD ou flèches pour avancer');
+
+/* Vue d'ensemble (maquette ouverte) ⇄ première personne (on marche dans le studio) */
+export function toggleView() {
+  const view = S().view === 'fp' ? 'orbit' : 'fp';
+  stopTour();
+  set({ view });
+  engine?.setView(view);
+  if (view === 'fp' && S().started) toast(hint(), 5000);
+}
+
+/* Première personne : clic au sol. On quitte la station en cours, comme on s'éloigne d'un bureau */
+export function walkTo(p) {
+  if (S().focus >= 0) goOverview();
+  else stopTour();
+  engine.walk(p);
+}
+
+/* Première personne : le visiteur se déplace au clavier */
+export function onManualMove() {
+  if (S().focus >= 0) goOverview();
+}
+
+export const canMove = () => S().started && !S().contactOpen;
 
 /* Range le livre sorti et éteint la formation mise en avant à l'écran */
 function putBack() {
@@ -44,7 +74,7 @@ export function focusStation(i, { tour = false, lines } = {}) {
   dialogue.stop();
   clearTimeout(talkTimer);
   set({ focus: i });
-  engine.focus(i);
+  const eta = engine.focus(i); // à la première personne, l'agent attend qu'on soit arrivé pour parler
   talkTimer = setTimeout(() => {
     dialogue.start(st, () => { if (S().tour) tourNext(); }, lines);
     const visited = new Set(S().visited).add(i);
@@ -53,7 +83,7 @@ export function focusStation(i, { tour = false, lines } = {}) {
       allSeenShown = true;
       setTimeout(() => toast('🎉 Tu as visité tous les bureaux ! Merci pour ta visite.', 5000), 2500);
     }
-  }, reduceMotion ? 50 : 1050);
+  }, reduceMotion ? 50 : Math.max(1050, eta * 1000));
   pop();
 }
 
@@ -84,10 +114,16 @@ export function pickCourse(c) {
   const again = S().course === c;
   putBack(); // un seul objet en avant à la fois
   if (again) { dialogue.stop(); return; }
-  const { title, school, place, about } = st.project.courses[c];
   set({ course: c });
   engine.selectCourse(c);
-  present(st, [`${title}, ${school}${place ? ` (${place})` : ''}. ${about || ''}`.trim()]);
+  present(st, [st.project.courses[c].speech]);
+}
+
+/* Onglet de l'écran de la salle de formation (diplômes ou simulations Forage) */
+export function showCourses(tab) {
+  const st = engine.stations.find((s) => s.type === 'training');
+  if (S().focus !== st.idx) focusStation(st.idx);
+  engine.showCourses(tab);
 }
 
 /* L'agent de la station dit ces phrases, en y allant d'abord si besoin */

@@ -1,5 +1,5 @@
 import { useStudio } from '../store.js';
-import { cycleSound, goOverview, openContact, startTour, stopTour, toggleNight } from '../controller.js';
+import { cycleSound, openContact, startTour, stopTour, toggleNight, toggleView } from '../controller.js';
 
 const SOUND = { voice: ['🗣️', 'Voix'], blips: ['🎵', 'Bips'], mute: ['🔇', 'Muet'] };
 
@@ -10,6 +10,7 @@ export default function TopBar() {
   const night = useStudio((s) => s.night);
   const tour = useStudio((s) => s.tour);
   const sound = useStudio((s) => s.sound);
+  const view = useStudio((s) => s.view);
   const desks = stations.filter((s) => s.type === 'desk');
   const seen = desks.filter((s) => visited.has(s.idx)).length;
 
@@ -26,7 +27,9 @@ export default function TopBar() {
         <button className={'tbtn glass' + (tour ? ' on' : '')} onClick={tour ? stopTour : startTour} title="Visite guidée (T)">
           {tour ? <><b>⏸</b><span>Stop visite</span></> : <><b>▶</b><span>Visite guidée</span></>}
         </button>
-        <button className="tbtn glass" onClick={goOverview} title="Vue d'ensemble (Échap)"><b>⌂</b><span>Vue d'ensemble</span></button>
+        <button className="tbtn glass" onClick={toggleView} title={view === 'fp' ? "Voir tout le studio d'en haut (V)" : 'Marcher dans le studio (V)'}>
+          {view === 'fp' ? <><b>🗺️</b><span>Vue d'ensemble</span></> : <><b>🚶</b><span>Visite à pied</span></>}
+        </button>
         <button className="tbtn glass accent" onClick={openContact} title="Me contacter"><b>✉️</b><span>Contact</span></button>
       </nav>
     </>

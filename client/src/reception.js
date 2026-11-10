@@ -1,14 +1,15 @@
 import { create } from 'zustand';
 import { useStudio } from './store.js';
 import { sendContact } from './api.js';
-import { focusStation, nudgeHost, startTour } from './controller.js';
+import { focusStation, nudgeHost, showCourses, startTour } from './controller.js';
+import { answer, buildDocs, buildIndex } from './knowledge.js';
 import { reduceMotion } from './studio/utils.js';
 
-/* Le chat de l'accueil : l'agent Bienvenue prend un rendez-vous ou une question, récapitule,
-   puis envoie la demande au serveur (enregistrée en base et transmise par e-mail) */
+/* Le chat de l'accueil : l'agent Bienvenue répond aux questions à partir du contenu du portfolio (knowledge.js),
+   prend un rendez-vous ou un message, récapitule, puis envoie la demande au serveur (enregistrée en base et transmise par e-mail) */
 export const useChat = create(() => ({
-  messages: [], // { id, from: 'bot' | 'me', text, recap?: [[libellé, valeur], ...] }
-  quick: [], // réponses proposées : { label, cmd } ou { label, text }
+  messages: [], // { id, from: 'bot' | 'me', text, recap?: [[libellé, valeur], ...], cite?: 'source de la réponse' }
+  quick: [], // réponses proposées : { label, cmd }, { label, text } ou { label, href } (lien externe)
   step: null, // ce que l'agent attend : une clé de ASK, ou null (choisir une réponse proposée)
   typing: false,
   form: {},
@@ -18,6 +19,7 @@ const set = useChat.setState, get = useChat.getState;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^\+?[\d\s().-]{8,20}$/;
 let uid = 0, run = 0; // run : numéro de la conversation en cours, pour abandonner une réponse dépassée
+let kb = null, lastQuestion = ''; // index des fiches du portfolio, construit à la première question
 
 const studio = () => {
   const { profile, stations } = useStudio.getState();
@@ -25,8 +27,8 @@ const studio = () => {
 };
 const cmd = (label, c) => ({ label, cmd: c });
 const say = (label) => ({ label, text: label });
-const RDV = cmd('📅 Prendre rendez-vous', 'rdv'), ASK_Q = cmd('💡 Poser une question', 'info');
-const MENU = [RDV, ASK_Q, cmd('🎓 Sa formation', 'formation'), cmd('🧰 Ses compétences', 'skills'), cmd('💼 Ses projets', 'projects')];
+const RDV = cmd('📅 Prendre rendez-vous', 'rdv'), ASK_Q = cmd('✉️ Lui écrire', 'info');
+const MENU = [RDV, cmd('💼 Ses projets', 'projects'), cmd('🧰 Ses compétences', 'skills'), cmd('🎓 Sa formation', 'formation'), ASK_Q];
 
 /* L'agent écrit ses messages un par un, avec « … » le temps de taper */
 async function bot(lines, { quick = [], step = null } = {}) {
@@ -64,11 +66,10 @@ function recap() {
 
 /* Ce que l'agent attend à chaque étape : vérification, puis suite de la conversation */
 const ASK = {
-  menu: { // texte libre dès le début : c'est une question pour Paul
-    placeholder: 'Écris ta demande…',
-    check: (t) => (/^(bonjour|bonsoir|salut|hello|hey|coucou)\b/i.test(t) && t.length < 25 ? 'Bonjour ! 😊 Que puis-je faire pour toi ?'
-      : t.length < 10 ? 'Peux-tu m’en dire un peu plus ? Ou choisis une option ci-dessous.' : ''),
-    next: (t) => { remember({ kind: 'info', message: t }); return askName(); },
+  menu: { // texte libre : une question sur Paul, à laquelle l'agent répond tout de suite
+    placeholder: 'Pose ta question (ex. : il connaît Docker ?)',
+    check: () => '',
+    next: (t) => ask(t),
   },
   topic: {
     placeholder: 'Ex. : mission data, stage, collaboration…',
@@ -148,15 +149,47 @@ async function send() {
   }
 }
 
-/* Réponses immédiates, à partir du profil : formation, compétences, projets */
+/* Réponse à une question tapée : la fiche du portfolio la plus proche, avec sa source et de quoi aller voir */
+function ask(question) {
+  const { profile, owner, stations } = studio();
+  lastQuestion = question;
+  kb ??= buildIndex(buildDocs({ profile, stations }));
+  const a = answer(kb, question, owner);
+  if (a.faq) return faq(a.faq);
+  if (a.miss) {
+    return bot(`Je n'ai pas trouvé la réponse dans le portfolio de ${owner}. Tu veux que je lui transmette ta question ?`, {
+      quick: [cmd('✉️ Oui, transmettre', 'forward'), RDV], step: 'menu',
+    });
+  }
+  const quick = [];
+  if (a.action === 'rdv') quick.push(RDV);
+  for (const d of a.docs ?? []) {
+    const st = stations[d.station];
+    if (!st || st.type === 'host' || quick.some((q) => q.cmd === `go:${st.idx}`) || quick.length >= 3) continue;
+    const where = { desk: `le bureau ${st.project.short}`, library: 'la bibliothèque', training: 'la salle de formation' }[st.type];
+    quick.push(cmd(`👀 Voir ${where}`, `go:${st.idx}`));
+  }
+  const demo = a.docs?.length === 1 && a.docs[0].demo;
+  if (demo) quick.push({ label: '🌐 Ouvrir le site', href: demo });
+  if (a.ask || a.docs?.length) quick.push(cmd(`✉️ Demander à ${owner}`, 'forward'));
+  return bot({ text: a.text, cite: a.cite }, { quick: quick.length ? quick : MENU, step: 'menu' });
+}
+
+/* Réponses immédiates, à partir du profil : formation (diplômes et Forage), compétences, projets */
 function faq(topic) {
   const { profile, owner, stations } = studio();
-  if (topic === 'formation') {
-    const list = (profile.education ?? []).map((c) => `${c.icon || '🎓'} ${c.title}\n${[c.school, c.place].filter(Boolean).join(' · ')}`);
-    const room = stations.find((s) => s.type === 'training');
-    const intro = list.length ? `Côté formation, ${owner} a suivi :\n\n${list.join('\n\n')}` : `${owner} présente son parcours en salle de formation.`;
-    return bot([intro, 'Tout est exposé dans sa salle de formation, au fond de la bibliothèque.'], {
-      quick: [room && cmd('🎓 Aller en salle de formation', 'go-training'), RDV, ASK_Q].filter(Boolean), step: 'menu',
+  if (topic === 'formation' || topic === 'simulations') {
+    const room = stations.find((s) => s.type === 'training'), courses = room?.project.courses ?? [];
+    const edu = courses.filter((c) => c.group !== 'sim'), sims = courses.filter((c) => c.group === 'sim');
+    const lines = [];
+    if (topic === 'formation' && edu.length) lines.push(`Côté diplômes, ${owner} a suivi :\n\n${edu.map((c) => `${c.icon || '🎓'} ${c.title}\n${c.sub}`).join('\n\n')}`);
+    if (sims.length) {
+      lines.push(`${topic === 'formation' ? 'Il' : owner} s'entraîne aussi sur Forage, avec des simulations de poste conçues par les entreprises :\n\n${sims.map((c) => `${c.icon} ${c.title}`).join('\n')}`);
+    }
+    if (!lines.length) lines.push(`${owner} présente son parcours en salle de formation.`);
+    lines.push(`Tout est exposé dans sa salle de formation, au fond de la bibliothèque${sims.length ? ' : les simulations sont dans l’onglet « Forage » de l’écran' : ''}.`);
+    return bot(lines, {
+      quick: [room && cmd('🎓 Aller en salle de formation', topic === 'simulations' ? 'go-forage' : 'go-training'), RDV, ASK_Q].filter(Boolean), step: 'menu',
     });
   }
   if (topic === 'skills') {
@@ -188,7 +221,14 @@ function command(c) {
       return bot('On reprend depuis le début. Que puis-je faire pour toi ?', { quick: MENU, step: 'menu' });
     case 'tour': set({ quick: MENU, step: 'menu' }); return startTour();
     case 'go-training': set({ quick: MENU, step: 'menu' }); return focusStation(stations.find((s) => s.type === 'training').idx);
-    default: return faq(c);
+    case 'go-forage': set({ quick: MENU, step: 'menu' }); return showCourses('sim');
+    case 'forward': // transmettre à Paul la question restée sans réponse (ou à laquelle il répondra mieux)
+      run++; set({ form: { kind: 'info', message: lastQuestion } });
+      if (lastQuestion.length >= 10) return askName();
+      return bot(`D'accord ! Quelle est ta question pour ${owner} ?`, { step: 'question' });
+    default:
+      if (c.startsWith('go:')) return focusStation(Number(c.slice(3)));
+      return faq(c);
   }
 }
 
@@ -196,7 +236,7 @@ function command(c) {
 export function openChat() {
   if (get().messages.length || get().typing) return;
   const { owner, host } = studio();
-  bot([`Bonjour 👋 Je suis ${host.name}, l'agent d'accueil.`, `Je peux prendre un rendez-vous avec ${owner} ou lui transmettre ta question. Que puis-je faire pour toi ?`], {
+  bot([`Bonjour 👋 Je suis ${host.name}, l'agent d'accueil.`, `Pose-moi tes questions sur ${owner} : ses projets, ses compétences, sa formation… Je réponds tout de suite, sources à l'appui. Je peux aussi prendre un rendez-vous ou lui transmettre un message.`], {
     quick: MENU, step: 'menu',
   });
 }
@@ -213,6 +253,7 @@ export function reply(raw) {
 
 /* Le visiteur clique sur une réponse proposée */
 export function choose(q) {
+  if (q.href) { window.open(q.href, '_blank', 'noopener,noreferrer'); return; }
   if (get().typing && !q.cmd) return;
   if (q.text) { reply(q.text); return; }
   me(q.label);

@@ -2,13 +2,19 @@
 
 Un open-space en 3D où chaque bureau présente un projet, animé par un agent qui parle.
 
+**La visite se fait à pied, à la première personne** : on entre par la porte, face à l'accueil.
+Glisser à la souris (ou au doigt) fait tourner la tête, un clic au sol y emmène en contournant les meubles,
+et <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> (ou <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>, et les flèches) font marcher.
+Cliquer sur un agent y conduit, puis il présente son projet. Le bouton **Vue d'ensemble** (touche <kbd>V</kbd>) passe à la maquette vue d'en haut, et inversement.
+
 Le local est découpé par des cloisons vitrées :
 
 - **l'accueil** (devant, à gauche) : le comptoir avec l'agent **Bienvenue**, le divan, le distributeur et la fontaine à eau.
-  Cliquer sur Bienvenue ouvre un **chat** : prise de rendez-vous ou question pour Paul, réponses rapides (formation, compétences, projets).
+  Cliquer sur Bienvenue ouvre un **chat** : il répond tout de suite aux questions sur Paul (projets, technos, formation, Forage, livres…)
+  en citant d'où vient la réponse, prend les rendez-vous et transmet les messages.
   Chaque demande est enregistrée en base et envoyée par e-mail (voir plus bas) ;
 - **la bibliothèque** (au fond, à gauche), avec Zoé et les livres recommandés, et, dans le même compartiment, **la salle de formation** :
-  Paul y présente ses formations, affichées sur le grand écran ;
+  Paul y présente ses diplômes et ses simulations de poste Forage, en deux onglets sur le grand écran ;
 - **l'espace cowork** (à droite) : un bureau par projet.
 
 | Couche | Rôle |
@@ -22,9 +28,11 @@ La scène 3D est en Three.js (`client/src/studio/`), pilotée par React via un p
 
 ```
 client/                 site React (Vite)
-  src/studio/           moteur 3D : local, agents, vie du studio (life.js), écrans animés, dialogues, voix
+  src/studio/           moteur 3D : local, agents, vie du studio (life.js), écrans animés, dialogues, voix,
+                        visite à la première personne (firstperson.js)
   src/components/       interface React
   src/reception.js      chat de l'agent d'accueil (rendez-vous, questions)
+  src/knowledge.js      réponses du chat : recherche dans le contenu du portfolio (BM25 + synonymes), sans IA externe
 server/
   db/schema.sql         tables
   db/seed-data.js       ← LE CONTENU DU PORTFOLIO (profil, contacts, projets)
@@ -61,6 +69,10 @@ Un projet retiré du fichier est masqué du studio (pas supprimé). En productio
 **Recommandations de lecture** : la liste est dans `profile.library.books` (titre, auteur, couleur de couverture, raison). La bibliothèque s'adapte au nombre de livres, et disparaît si la liste est vide.
 
 **Formations** : `profile.education` (intitulé, établissement, pays, `period` facultatif, et `about`, ce que Paul dit quand on choisit la formation). Les phrases de Paul dans la salle de formation sont dans `profile.lines`.
+
+**Simulations Forage** : `profile.simulations` (entreprise, intitulé, durée, `about`, `tasks` et `skills`). Elles s'affichent dans l'onglet « Forage » de l'écran et dans le panneau, où une simulation choisie déplie ses tâches. Elles restent présentées comme des simulations, pas comme des expériences professionnelles.
+
+**Chat de l'accueil** : il n'a rien à configurer. Ses réponses viennent du contenu ci-dessus (projets, stacks, formations, Forage, livres, contact) : modifier `seed-data.js` suffit à les mettre à jour. Une question sans réponse peut être transmise à Paul par e-mail.
 
 **Agent d'accueil** : `profile.reception` (apparence et nom de l'agent, phrases dites à l'arrivée).
 

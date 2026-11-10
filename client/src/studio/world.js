@@ -4,7 +4,7 @@ import { Agent } from './Agent.js';
 import { bookShelf } from './library.js';
 import { Nav } from './nav.js';
 import { createScreen, makeCover } from './screens.js';
-import { courseScreen } from './training.js';
+import { courseScreen, trainingCourses } from './training.js';
 import { scene, world } from './world-state.js';
 import {
   B, CY, EMOJI, FONT, MONO, SP, add, fit, floorSpot, hex, makeCanvas, mat, reseed, rr, rug, shade, soft, softDot, srand, texFrom,
@@ -119,24 +119,65 @@ function buildRoom(L, profile) {
   B(0.06, H, T + 0.04, capM, g, W / 2, H / 2, bz, false);
   // Fenêtres avec ville (jour / nuit en fondu) : une dans la bibliothèque, deux dans le cowork, de part et d'autre du néon
   const clouds = makeClouds(), skyD = makeSky(false), skyN = makeSky(true), winW = 4.4, winH = 2.3, winY = 2.75, z = -D / 2 + T + 0.01;
-  [-W / 2 + 5.2, (L.x1 + L.cx - 2.9) / 2, (L.cx + 2.9 + W / 2 - 1.6) / 2].forEach((wx, i) => {
+  // Une fenêtre, vitre tournée vers +z dans son groupe (i décale la vue de la ville d'une fenêtre à l'autre)
+  const win = (parent, x, wz, rotY, i, shadows = true) => {
+    const w = new THREE.Group(); w.position.set(x, winY, wz); w.rotation.y = rotY; parent.add(w);
     const td = skyD.clone(), tn = skyN.clone(), tc = clouds.clone();
     for (const t of [td, tn, tc]) { t.repeat.set(0.5, 1); t.offset.set(i * 0.25, 0); t.wrapS = THREE.RepeatWrapping; t.needsUpdate = true; }
-    add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: td }), g, wx, winY, z, false);
-    add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: tc, transparent: true, depthWrite: false }), g, wx, winY, z + 0.002, false);
+    add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: td }), w, 0, 0, 0, false);
+    add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: tc, transparent: true, depthWrite: false }), w, 0, 0, 0.002, false);
     world.clouds.push(tc);
-    addSpot('window', wx, -D / 2 + 1.35, Math.PI);
-    const n = add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: tn, transparent: true, opacity: 0 }), g, wx, winY, z + 0.005, false);
+    const n = add(new THREE.PlaneGeometry(winW, winH), new THREE.MeshBasicMaterial({ map: tn, transparent: true, opacity: 0 }), w, 0, 0, 0.005, false);
     world.nightFade.push(n.material);
     const fm = mat(0x3b3552);
-    B(winW + 0.24, 0.14, 0.14, fm, g, wx, winY + winH / 2 + 0.05, z + 0.05);
-    B(winW + 0.24, 0.14, 0.14, fm, g, wx, winY - winH / 2 - 0.05, z + 0.05);
-    B(0.14, winH + 0.2, 0.14, fm, g, wx - winW / 2 - 0.05, winY, z + 0.05);
-    B(0.14, winH + 0.2, 0.14, fm, g, wx + winW / 2 + 0.05, winY, z + 0.05);
-    B(0.07, winH, 0.1, fm, g, wx, winY, z + 0.04);
-    B(winW + 0.5, 0.08, 0.34, 0xcdbfae, g, wx, winY - winH / 2 - 0.15, z + 0.15);
+    B(winW + 0.24, 0.14, 0.14, fm, w, 0, winH / 2 + 0.05, 0.05, shadows);
+    B(winW + 0.24, 0.14, 0.14, fm, w, 0, -winH / 2 - 0.05, 0.05, shadows);
+    B(0.14, winH + 0.2, 0.14, fm, w, -winW / 2 - 0.05, 0, 0.05, shadows);
+    B(0.14, winH + 0.2, 0.14, fm, w, winW / 2 + 0.05, 0, 0.05, shadows);
+    B(0.07, winH, 0.1, fm, w, 0, 0, 0.04, shadows);
+    B(winW + 0.5, 0.08, 0.34, 0xcdbfae, w, 0, -winH / 2 - 0.15, 0.15, shadows);
+  };
+  [-W / 2 + 5.2, (L.x1 + L.cx - 2.9) / 2, (L.cx + 2.9 + W / 2 - 1.6) / 2].forEach((wx, i) => {
+    win(g, wx, z, 0, i);
+    addSpot('window', wx, -D / 2 + 1.35, Math.PI);
   });
   buildNeon(g, L, profile);
+
+  // Murs de devant et de droite, plafond, porte d'entrée : seulement à la première personne.
+  // La vue d'ensemble garde la « maison de poupée » ouverte. Rien ici ne projette d'ombre : l'éclairage reste le même.
+  const shell = new THREE.Group(); shell.visible = false; scene.add(shell); world.shell = shell;
+  B(W, H, T, wallM, shell, 0, H / 2, D / 2 - T / 2, false);
+  B(T, H, D, wallM, shell, W / 2 - T / 2, H / 2, 0, false);
+  B(W - 2 * T, 1.0, 0.04, lowM, shell, 0, 0.5, D / 2 - T - 0.02, false);
+  B(0.04, 1.0, D - 2 * T, lowM, shell, W / 2 - T - 0.02, 0.5, 0, false);
+  B(W - 2 * T, 0.16, 0.07, trimM, shell, 0, 0.08, D / 2 - T - 0.035, false);
+  B(0.07, 0.16, D - 2 * T, trimM, shell, W / 2 - T - 0.035, 0.08, 0, false);
+  // Tourné vers le sol, le plafond ne reçoit que la lumière « du bas » : une légère émission l'éclaircit
+  const ceil = add(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ color: 0xf6f1e9, emissive: 0x4a453e, roughness: 0.95 }), shell, 0, H, 0, false);
+  ceil.rotation.x = Math.PI / 2;
+  const panel = new THREE.MeshBasicMaterial({ color: 0xfffaf0, toneMapped: false }), rim = mat(0xcdbfae);
+  for (let px = -W / 2 + 3; px < W / 2 - 1.5; px += 4.4) {
+    for (let pz = -D / 2 + 3; pz < D / 2 - 1.5; pz += 4.4) {
+      B(1.5, 0.04, 0.62, rim, shell, px, H - 0.02, pz, false);
+      B(1.38, 0.02, 0.5, panel, shell, px, H - 0.045, pz, false);
+    }
+  }
+  // Fenêtres : deux sur le mur de droite, deux sur le mur de devant (côté cowork)
+  win(shell, W / 2 - T - 0.01, -D / 4, -Math.PI / 2, 3, false);
+  win(shell, W / 2 - T - 0.01, D / 4, -Math.PI / 2, 1, false);
+  for (const [k, wx] of [L.cx - 4.6, L.cx + 4.6].entries()) win(shell, wx, D / 2 - T - 0.01, Math.PI, 2 + k, false);
+  // Porte d'entrée, face à l'accueil
+  const dx = L.xl + 6.8, dz = D / 2 - T;
+  B(1.56, 2.62, 0.08, 0x2b2740, shell, dx, 1.31, dz - 0.03, false);
+  B(1.34, 2.48, 0.06, 0x8a5a3b, shell, dx, 1.24, dz - 0.08, false);
+  B(0.52, 1.1, 0.02, GLASS, shell, dx - 0.2, 1.6, dz - 0.115, false);
+  B(0.05, 0.32, 0.06, 0xd8c08a, shell, dx + 0.5, 1.1, dz - 0.14, false);
+  const [sc, sx] = makeCanvas(256, 80);
+  sx.fillStyle = '#1faa59'; rr(sx, 0, 0, 256, 80, 12); sx.fill();
+  sx.fillStyle = '#fff'; sx.font = `700 40px ${FONT}`; sx.textAlign = 'center'; sx.textBaseline = 'middle'; sx.fillText('SORTIE', 128, 42);
+  add(new THREE.PlaneGeometry(0.6, 0.19), new THREE.MeshBasicMaterial({ map: texFrom(sc), toneMapped: false }), shell, dx, 2.85, dz - 0.04, false).rotation.y = Math.PI;
+  // Point de départ de la visite : juste après la porte, face à l'accueil
+  world.entrance = { pos: new THREE.Vector3(dx, 0, D / 2 - 1.05), look: new THREE.Vector3(dx + 0.9, 1.35, D / 2 - 5.2) };
 }
 
 /* Cloison vitrée façon verrière, de a à b : le long de x (à z = at) ou de z (à x = at).
@@ -371,7 +412,7 @@ function trainingRoom(L, profile) {
   // Écran au mur et horloge au-dessus
   B(0.08, 2.2, 3.78, 0x1e1b2c, g, 0.04, 2.15, sz);
   const scr = new THREE.Group(); scr.position.set(0.09, 2.15, sz); scr.rotation.y = Math.PI / 2; g.add(scr);
-  world.training = courseScreen(scr, profile.education ?? [], look, 3.6, 2.03);
+  world.training = courseScreen(scr, trainingCourses(profile), look, 3.6, 2.03);
   wallClock(g, 0.05, 3.88, sz);
   // Bureau du formateur, face à la salle
   B(0.75, 0.05, 1.3, 0xd8a56f, g, 1.8, 0.76, 1.1);
@@ -547,6 +588,7 @@ function buildReception(L, profile, idx) {
   return {
     idx, type: 'host', project, look, agent, group: s, num: '👋', lines, stool: { height: 0.7, feet: 0.2 },
     center: new THREE.Vector3(0.15, 1.35, 0.1), camOff: new THREE.Vector3(-0.8, 1.6, 6.6), // de face : la cloison du cowork reste hors champ
+    fp: { stand: new THREE.Vector3(0.15, 0, 3.2), look: new THREE.Vector3(0.15, 1.3, 0) }, // devant le comptoir
     hitSize: [4.2, 2.6, 2.6], hitPos: [0, 1.3, 0.2],
   };
 }
@@ -588,6 +630,7 @@ function buildDesk(p, idx, P) {
   return {
     idx, type: 'desk', project: p, look, agent, group: s, num, spot, screen, lines: p.lines,
     center: new THREE.Vector3(0.75, 1.2, 0.1), camOff: new THREE.Vector3(2.6, 1.9, 7.6),
+    fp: { stand: new THREE.Vector3(0.9, 0, 3.2), look: new THREE.Vector3(0.75, 1.15, -0.1) }, // dans l'allée, face au bureau
     hitSize: [4.4, 2.8, 3.4], hitPos: [0.7, 1.4, -0.1], chair,
   };
 }
@@ -613,6 +656,7 @@ function buildLibrary(lib, idx, sh) {
   return {
     idx, type: 'library', project, look, agent, group: sh, num: '📚', spot: floor, lines: lib.lines,
     center: new THREE.Vector3(0.75, 1.35, 0.55), camOff: new THREE.Vector3(6.4, 1.5, 2.3),
+    fp: { stand: new THREE.Vector3(4.2, 0, 2.2), look: new THREE.Vector3(0.5, 1.45, 0.6) }, // près de la table de lecture, l'étagère et Zoé en vue
     hitSize: [1.7, 3, 4.4], hitPos: [0.75, 1.5, 0.5], chair,
   };
 }
@@ -627,7 +671,7 @@ function buildTraining(profile, idx, { group: g, chair, look }) {
   const now = profile.experience?.find((e) => e.current);
   const project = {
     slug: 'formation', title: 'Mes formations', short: 'Formation', icon: '🎓', tagline: profile.role, description: profile.bio,
-    stack: profile.skills, experience: profile.experience, courses: profile.education ?? [], status: now ? `${now.role} chez ${now.org}` : '',
+    stack: profile.skills, experience: profile.experience, courses: trainingCourses(profile), status: now ? `${now.role} chez ${now.org}` : '',
     repo: profile.github ? `https://github.com/${profile.github}` : '', demo: '', images: [], meeting: true, look,
   };
   project.cover = makeCover(project, look);
@@ -635,6 +679,7 @@ function buildTraining(profile, idx, { group: g, chair, look }) {
     idx, type: 'training', project, look, agent, group: g, num: '🎓', spot, lines: profile.lines, chair,
     chatSpot: new THREE.Vector3(1.1, 0, 0), // un collègue vient lui parler côté salle, pas contre la cloison
     center: new THREE.Vector3(1.2, 2.0, 4.4), camOff: new THREE.Vector3(7.4, 1.9, 1.6),
+    fp: { stand: new THREE.Vector3(5.25, 0, 4.9), look: new THREE.Vector3(0.6, 1.75, 4.3) }, // dans l'allée entre les rangées, comme un élève
     hitSize: [1.8, 3.2, 5.6], hitPos: [0.9, 1.6, 4.0],
   };
 }

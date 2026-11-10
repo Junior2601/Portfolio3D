@@ -12,9 +12,9 @@ export class Nav {
     this.nx = Math.ceil(W / CELL); this.nz = Math.ceil(D / CELL);
     const n = this.nx * this.nz;
     this.blocked = new Uint8Array(n); this.prev = new Int32Array(n); this.queue = new Int32Array(n);
-    // Murs du fond et de gauche, puis bords du plancher
+    // Murs du fond et de gauche, puis murs de devant et de droite (visibles à la première personne)
     this.block(-W / 2, 0, 1.3, D, 0); this.block(0, -D / 2, W, 1.3, 0);
-    this.block(W / 2, 0, 0.7, D, 0); this.block(0, D / 2, W, 0.7, 0);
+    this.block(W / 2, 0, 1.3, D, 0); this.block(0, D / 2, W, 1.3, 0);
   }
 
   /* Bloque un rectangle centré en (x, z) ; pad = marge pour le corps d'un agent */

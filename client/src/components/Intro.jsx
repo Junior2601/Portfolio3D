@@ -16,10 +16,10 @@ export default function Intro() {
         <h1>Bienvenue au <span>{name}</span></h1>
         <p>Un open-space où chaque bureau est un projet. Les agents qui y travaillent t'attendent pour te le présenter.</p>
         <ul className="steps">
-          <li><span>🖱️</span>Clique sur un agent ou sur son bureau</li>
-          <li><span>🗣️</span>Il te présente son projet, à voix haute</li>
+          <li><span>🚶</span>Tu entres à pied : glisse pour regarder, clique au sol pour marcher</li>
+          <li><span>🗣️</span>Clique sur un agent : il te présente son projet, à voix haute</li>
           <li><span>🧭</span>Ou laisse-toi guider bureau par bureau</li>
-          <li><span>📅</span>À l'accueil, {host} prend tes rendez-vous et tes questions</li>
+          <li><span>💬</span>À l'accueil, {host} répond à tes questions et prend tes rendez-vous</li>
         </ul>
         {status === 'error' ? (
           <>
@@ -32,7 +32,7 @@ export default function Intro() {
           </button>
         )}
         <div className="intro-foot">
-          Son recommandé · <kbd>←</kbd> <kbd>→</kbd> changer de bureau · <kbd>Espace</kbd> phrase suivante · <kbd>Échap</kbd> vue d'ensemble
+          Son recommandé · <kbd>Z</kbd><kbd>Q</kbd><kbd>S</kbd><kbd>D</kbd> ou flèches pour marcher · <kbd>Espace</kbd> phrase suivante · <kbd>V</kbd> vue d'ensemble
         </div>
       </div>
     </section>

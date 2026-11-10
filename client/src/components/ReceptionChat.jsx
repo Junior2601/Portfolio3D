@@ -38,6 +38,7 @@ export default function ReceptionChat({ look, owner }) {
             {m.recap && (
               <dl>{m.recap.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
             )}
+            {m.cite && <small className="msg-cite">📍 Source : {m.cite}</small>}
           </div>
         ))}
         {typing && <div className="msg bot dots" aria-label={`${look.name} écrit…`}><span /><span /><span /></div>}
@@ -62,7 +63,7 @@ export default function ReceptionChat({ look, owner }) {
         />
         <button disabled={!ask || typing || !text.trim()} aria-label="Envoyer">➤</button>
       </form>
-      <p className="chat-note">Ta demande est transmise à {owner} par e-mail.</p>
+      <p className="chat-note">Réponses tirées du portfolio · tes messages sont transmis à {owner} par e-mail.</p>
     </div>
   );
 }

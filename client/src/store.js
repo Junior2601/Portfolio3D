@@ -8,6 +8,7 @@ export const useStudio = create(() => ({
   profile: null,
   stations: [], // [accueil, ...bureaux, bibliothèque, salle de formation] : { idx, type, num, project, look }
   started: false,
+  view: 'fp', // 'fp' : première personne (on marche dans le studio) | 'orbit' : vue d'ensemble
   focus: -1,
   book: -1, // livre sorti de l'étagère
   course: -1, // formation mise en avant dans la salle de formation
